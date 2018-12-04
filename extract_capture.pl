@@ -45,12 +45,12 @@ for ($i=0; $i<$picFiles; $i++) {
 		#read (FH,$buffer,80);
 		
 		#($field1, $field2, $capDate, $field4, $field5, $field6, $field7, $field8, $field9, $field10, $startOffset, $endOffset, $field13, $field14, $field15, $field16) = unpack("I*",$buffer);
-		($field1, $field2, $capDate, $field4, $field5, $field6, $field7, $field8, $field9, $field10, $startOffset, $endOffset, $field13, $field14, $field15, $field16) = unpack("I*",$buffer);
+		($field1, $field2, $field3, $field4, $field5, $field6, $capDate, $field8, $field9, $field10, $field11, $field12, $field13, $field14, $startOffset, $endOffset) = unpack("I*",$buffer);
 		$formatted_start_time = time2str("%C", $capDate, -0005);
-		$fileDate = time2str("%Y%m%d%H%M%S", $capDate, -0005);
-		$fileDayofWeek = time2str("%w", $capDate, -0005);
+		$fileDate = time2str("%Y_%m_%d-%H-%M-%S", $capDate, -0005);
+		$fileDayofWeek = time2str("%a", $capDate, -0005);
 		
-		#print "$currentpos: $field1, $field2, $capDate, $field4, $field5, $field6, $field7, $field8, $field9, $field10, $startOffset, $endOffset, $field13, $field14, $field15, $field16\n";
+		#print "$currentpos: $field1, $field2, $field3, $field4, $field5, $field6, $capDate, $field8, $field9, $field10, $field11, $field12, $field13, $field14, $startOffset, $endOffset\n";
 		
 		if ($capDate > 0) {
 				$jpegLength = ($endOffset - $startOffset);
