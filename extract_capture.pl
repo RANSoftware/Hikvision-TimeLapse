@@ -12,20 +12,59 @@ if (not defined $outputDir) {
   die "Need output directory\nUsage extract_capture.pl inputdir outputdir";
 }
 
-$headerSize = 2816;
+print "\n************* EXTRACTION DATE AND TIME LIMITS *************\n";
+print "\nDate and time format example YYYYMMDDHHMMSS: 20181225221508\n";
+print "\nEnter START date and time (or enter 1 to start from the\nfirst available image or leave empty if you don't want to use\na date and time limit): ";
+my $inputStartDate = <STDIN>;
+chomp $inputStartDate;
+
+$nowEndDate = time2str("%Y%m%d%H%M%S", time());
+
+if ($inputStartDate != "") {
+	print "\nEnter END date and time (or enter 1 to use current date and\ntime (this will extract until the last image), or leave empty\nif you don't want to use a date and time limit): ";
+	our $inputEndDate = <STDIN>;
+	chomp $inputEndDate;
+	if ($inputEndDate == 1) {
+		$inputEndDate = $nowEndDate;
+	}
+}
+
+print "\n************* OUTPUT JPG FILES NAMING OPTIONS *************\n";
+print "\nEnter 1 for Image_YYYY_MM_DD-HH_MM_SS-DayName.jpg\nEx: Image_2018_12_25-22_15_08-Tue\n";
+print "\nEnter 2 for Image_YYYYMMDDHHMMSS-DayNumber.jpg\nEx: Image_20181225221508-2\n";
+my $outputDateFormat = <STDIN>;
+chomp $outputDateFormat;
+
 $maxRecords = 4096;
 $recordSize = 80;
 
 open (FH,$inputDir . "/index00p.bin") or die;
- read (FH,$buffer,1280);
-  #read (FH,$buffer,-s "index00.bin");
+read (FH,$buffer,1280);
+#read (FH,$buffer,-s "index00.bin");
 
 ($modifyTimes, $version, $picFiles, $nextFileRecNo, $lastFileRecNo, $curFileRec, $unknown, $checksum) = unpack("Q1I1I1I1I1C1176C76I1",$buffer);
 #print "$modifyTimes, $version, $picFiles, $nextFileRecNo, $lastFileRecNo, $curFileRec, $unknown, $checksum\n";
 
 $currentpos = tell (FH);
 $offset = $maxRecords * $recordSize;
+$fullSize = $offset * $picFiles;
 
+for ($i=0; $i<$fullSize; $i++) {
+		seek (FH, $i, 0); #Use seek to make sure we are at the right location, 'read' was occasionally jumping a byte
+		$Headcurrentpos = tell (FH);
+		read (FH,$Headbuffer,80); #Read 80 bytes for the record
+		#print "************$Headcurrentpos***************\n";
+				
+		($Headfield1, $Headfield2, $Headfield3, $Headfield4, $Headfield5, $Headfield6, $HeadcapDate, $Headfield8, $Headfield9, $Headfield10, $Headfield11, $Headfield12, $Headfield13, $Headfield14, $HeadstartOffset, $HeadendOffset) = unpack("I*",$Headbuffer);
+				
+		#print "$Headercurrentpos: $Headfield1, $Headfield2, $Headfield3, $Headfield4, $Headfield5, $Headfield6, $HeadcapDate, $Headfield8, $Headfield9, $Headfield10, $Headfield11, $Headfield12, $Headfield13, $Headfield14, $HeadstartOffset, $HeadendOffset\n";
+		if ($HeadcapDate > 0 and $Headfield8 == 0 and $Headfield9 > 0 and $Headfield10 == 0 and $Headfield11 == 0 and $Headfield12 == 0 and $Headfield13 == 0 and $Headfield14 == 0 and $HeadstartOffset == 0 and $HeadendOffset > 0)
+		{
+			print "HeaderSize: $Headcurrentpos\n";
+			$fullSize = 1;
+			$headerSize = $Headcurrentpos;
+		}
+}
 
 for ($i=0; $i<$picFiles; $i++) {
 	$newOffset = $headerSize + ($offset * $i);
@@ -42,43 +81,68 @@ for ($i=0; $i<$picFiles; $i++) {
 		$currentpos = tell (FH);
 		read (FH,$buffer,80); #Read 80 bytes for the record
 		#print "************$currentpos***************\n";
-		#read (FH,$buffer,80);
-		
-		#($field1, $field2, $capDate, $field4, $field5, $field6, $field7, $field8, $field9, $field10, $startOffset, $endOffset, $field13, $field14, $field15, $field16) = unpack("I*",$buffer);
+				
 		($field1, $field2, $field3, $field4, $field5, $field6, $capDate, $field8, $field9, $field10, $field11, $field12, $field13, $field14, $startOffset, $endOffset) = unpack("I*",$buffer);
 		$formatted_start_time = time2str("%C", $capDate, -0005);
-		$fileDate = time2str("%Y_%m_%d-%H-%M-%S", $capDate, -0005);
-		$fileDayofWeek = time2str("%a", $capDate, -0005);
+		if ($outputDateFormat == 1) {
+			$fileDate = time2str("%Y_%m_%d-%H_%M_%S", $capDate, -0005);
+			$fileDayofWeek = time2str("%a", $capDate, -0005);
+		}
+		elsif ($outputDateFormat == 2) {
+			$fileDate = time2str("%Y%m%d%H%M%S", $capDate, -0005);
+			$fileDayofWeek = time2str("%w", $capDate, -0005);
+		}
+		else {
+			$fileDate = time2str("%Y_%m_%d-%H_%M_%S", $capDate, -0005);
+			$fileDayofWeek = time2str("%a", $capDate, -0005);
+		}
+		$limitFileDate = time2str("%Y%m%d%H%M%S", $capDate, -0005);
 		
 		#print "$currentpos: $field1, $field2, $field3, $field4, $field5, $field6, $capDate, $field8, $field9, $field10, $field11, $field12, $field13, $field14, $startOffset, $endOffset\n";
 		
-		if ($capDate > 0) {
+		if ($inputStartDate != "" and $inputEndDate != "") {
+			if ($capDate > 0 and $limitFileDate >= $inputStartDate and $limitFileDate <= $inputEndDate) {
 				$jpegLength = ($endOffset - $startOffset);
 				$fileSize = $jpegLength / 1024;
-				$fileName = "image_${fileDate}-${fileDayofWeek}.jpg";
+				$fileName = "Image_${fileDate}-${fileDayofWeek}.jpg";
 				
 				unless (-e $outputDir."/".$fileName) {
 					if ($jpegLength > 0) {
 						seek (PF, $startOffset, 0);
 						read (PF, $singlejpeg, $jpegLength) or die;
 						if ($singlejpeg =~ /[^\0]/) {
-							print "IMAGE ($currentpos): $formatted_start_time - ($startOffset - $endOffset) FILE SIZE: ". int($fileSize)." kb FILE DATE: $fileDate FILE NAME: $fileName\n";
+							print "POSITION ($currentpos): $formatted_start_time - OFFSET:($startOffset - $endOffset)\nFILE NAME: $fileName FILE SIZE: ". int($fileSize)." KB\n\n";
 							open (OUTFILE, ">". $outputDir."/".$fileName);
 							binmode(OUTFILE);
 							print OUTFILE ${singlejpeg};
 							close OUTFILE;
 						}
-						
 					}
 				}
+			}
+		} 
+		else {
+			if ($capDate > 0) {
+				$jpegLength = ($endOffset - $startOffset);
+				$fileSize = $jpegLength / 1024;
+				$fileName = "Image_${fileDate}-${fileDayofWeek}.jpg";
 				
-				
+				unless (-e $outputDir."/".$fileName) {
+					if ($jpegLength > 0) {
+						seek (PF, $startOffset, 0);
+						read (PF, $singlejpeg, $jpegLength) or die;
+						if ($singlejpeg =~ /[^\0]/) {
+							print "POSITION ($currentpos): $formatted_start_time - OFFSET:($startOffset - $endOffset)\nFILE NAME: $fileName FILE SIZE: ". int($fileSize)." KB\n\n";
+							open (OUTFILE, ">". $outputDir."/".$fileName);
+							binmode(OUTFILE);
+							print OUTFILE ${singlejpeg};
+							close OUTFILE;
+						}
+					}
+				}
+			}
 		}
-		
 	}
-	
 	close (PF);
 }
-
-
 close FH;
