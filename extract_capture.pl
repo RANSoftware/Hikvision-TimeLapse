@@ -30,8 +30,8 @@ if ($inputStartDate != "") {
 }
 
 print "\n************* OUTPUT JPG FILES NAMING OPTIONS *************\n";
-print "\nEnter 1 for Image_YYYY_MM_DD-HH_MM_SS-DayName.jpg\nEx: Image_2018_12_25-22_15_08-Tue\n";
-print "\nEnter 2 for Image_YYYYMMDDHHMMSS-DayNumber.jpg\nEx: Image_20181225221508-2\n";
+print "\nEnter 1 for Image_YYYY_MM_DD-HH_MM_SS-DayName.jpg\nEx: Image_2018_12_25-22_15_08-Tue.jpg\n";
+print "\nEnter 2 for Image_YYYYMMDDHHMMSS-DayNumber.jpg\nEx: Image_20181225221508-2.jpg\n";
 my $outputDateFormat = <STDIN>;
 chomp $outputDateFormat;
 
