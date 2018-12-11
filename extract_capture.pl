@@ -58,11 +58,11 @@ for ($i=0; $i<$fullSize; $i++) {
 		($Headfield1, $Headfield2, $Headfield3, $Headfield4, $Headfield5, $Headfield6, $HeadcapDate, $Headfield8, $Headfield9, $Headfield10, $Headfield11, $Headfield12, $Headfield13, $Headfield14, $HeadstartOffset, $HeadendOffset) = unpack("I*",$Headbuffer);
 				
 		#print "$Headercurrentpos: $Headfield1, $Headfield2, $Headfield3, $Headfield4, $Headfield5, $Headfield6, $HeadcapDate, $Headfield8, $Headfield9, $Headfield10, $Headfield11, $Headfield12, $Headfield13, $Headfield14, $HeadstartOffset, $HeadendOffset\n";
-		if ($HeadcapDate > 0 and $Headfield8 == 0 and $Headfield9 > 0 and $Headfield10 == 0 and $Headfield11 == 0 and $Headfield12 == 0 and $Headfield13 == 0 and $Headfield14 == 0 and $HeadstartOffset == 0 and $HeadendOffset > 0)
+		if ($HeadcapDate > 0 and $Headfield8 == 0 and $Headfield9 > 0 and $Headfield10 == 0 and $Headfield11 == 0 and $Headfield12 == 0 and $Headfield13 == 0 and $Headfield14 == 0 and $HeadstartOffset > 0 and $HeadendOffset > 0)
 		{
-			print "HeaderSize: $Headcurrentpos\n";
 			$fullSize = 1;
-			$headerSize = $Headcurrentpos;
+			$headerSize = $Headcurrentpos - $recordSize;
+			print "HeaderSize: $headerSize\n";
 		}
 }
 
