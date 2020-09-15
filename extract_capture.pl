@@ -5,11 +5,11 @@ use Date::Format;
 my ($inputDir, $outputDir) = @ARGV;
 
 if (not defined $inputDir) {
-  die "Need input directory\nUsage extract_capture.pl inputdir outputdir";
+  die "\nERROR: Need input directory.\nUsage: extract_capture.pl inputdir outputdir";
 }
 
 if (not defined $outputDir) {
-  die "Need output directory\nUsage extract_capture.pl inputdir outputdir";
+  die "\nERROR: Need output directory.\nUsage: extract_capture.pl inputdir outputdir";
 }
 
 print "\n************* EXTRACTION DATE AND TIME LIMITS *************\n";
@@ -38,7 +38,7 @@ chomp $outputDateFormat;
 $maxRecords = 4096;
 $recordSize = 80;
 
-open (FH,$inputDir . "/index00p.bin") or die;
+open (FH,$inputDir . "/index00p.bin") or (print "\n\nCan't find index00p.bin, trying to use index01p.bin...\n" and open (FH,$inputDir . "/index01p.bin")) or die "ERROR: Can't find index00p.bin or index01p.bin in the input folder.\n";
 read (FH,$buffer,1280);
 #read (FH,$buffer,-s "index00.bin");
 
@@ -62,7 +62,8 @@ for ($i=0; $i<$fullSize; $i++) {
 		{
 			$fullSize = 1;
 			$headerSize = $Headcurrentpos - $recordSize;
-			print "HeaderSize: $headerSize\n";
+			print "\nHeaderSize: $headerSize\nStarting...\n\n";
+			sleep (3);
 		}
 }
 
@@ -72,7 +73,7 @@ for ($i=0; $i<$picFiles; $i++) {
 	$picFileName = "hiv" . sprintf("%05d", $i) . ".pic";
 	print "PicFile: $picFileName at $newOffset\n";
 	#<STDIN>;
-	open (PF, $inputDir . "/" . $picFileName) or die;
+	open (PF, $inputDir . "/" . $picFileName) or die "ERROR: Can't find " . $picFileName . " in the input folder.\n";
 	binmode(PF);
 		
 	for ($j=0; $j<$maxRecords; $j++) {
@@ -109,7 +110,7 @@ for ($i=0; $i<$picFiles; $i++) {
 				unless (-e $outputDir."/".$fileName) {
 					if ($jpegLength > 0) {
 						seek (PF, $startOffset, 0);
-						read (PF, $singlejpeg, $jpegLength) or die;
+						read (PF, $singlejpeg, $jpegLength) or die "END: Files extracted successfully.\n";
 						if ($singlejpeg =~ /[^\0]/) {
 							print "POSITION ($currentpos): $formatted_start_time - OFFSET:($startOffset - $endOffset)\nFILE NAME: $fileName FILE SIZE: ". int($fileSize)." KB\n\n";
 							open (OUTFILE, ">". $outputDir."/".$fileName);
@@ -130,7 +131,7 @@ for ($i=0; $i<$picFiles; $i++) {
 				unless (-e $outputDir."/".$fileName) {
 					if ($jpegLength > 0) {
 						seek (PF, $startOffset, 0);
-						read (PF, $singlejpeg, $jpegLength) or die;
+						read (PF, $singlejpeg, $jpegLength) or die "END: Files extracted successfully.\n";
 						if ($singlejpeg =~ /[^\0]/) {
 							print "POSITION ($currentpos): $formatted_start_time - OFFSET:($startOffset - $endOffset)\nFILE NAME: $fileName FILE SIZE: ". int($fileSize)." KB\n\n";
 							open (OUTFILE, ">". $outputDir."/".$fileName);
